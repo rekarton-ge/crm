@@ -1,0 +1,67 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_crm
+    environment:
+      POSTGRES_USER: crm_user
+      POSTGRES_PASSWORD: crm_password
+      POSTGRES_DB: crm_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm_user -d crm_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crm_network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend_crm
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - POSTGRES_USER=crm_user
+      - POSTGRES_PASSWORD=crm_password
+      - POSTGRES_DB=crm_db
+      - POSTGRES_HOST=db
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - crm_network
+    restart: unless-stopped
+
+  frontend:
+    container_name: frontend_crm
+    build:
+      context: ./frontend
+    volumes:
+      - ./frontend:/app  # Монтируем папку с кодом
+      - /app/node_modules  # Используем отдельный том для node_modules
+    ports:
+      - "5173:5173"
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+    networks:
+      - crm_network
+    restart: unless-stopped
+
+
+volumes:
+  postgres_data:
+
+networks:
+  crm_network:
+    driver: bridge
