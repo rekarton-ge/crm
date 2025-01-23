@@ -41,10 +41,14 @@ INSTALLED_APPS = [
     'simple_history',
     'django_filters',
     'rest_framework',
-    'clients',
+    'clients.apps.ClientsConfig',
+    'corsheaders',
+    'documents.apps.DocumentsConfig',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -140,3 +144,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,  # Пагинация по 10 элементов на странице
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+# Если вы хотите разрешить запросы со всех источников (небезопасно для production):
+# CORS_ALLOW_ALL_ORIGINS = True

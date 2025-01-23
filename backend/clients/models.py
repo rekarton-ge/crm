@@ -181,3 +181,5 @@ class Interaction(models.Model):
         indexes = [
             models.Index(fields=["client", "date"]),
         ]
+
+#тест
