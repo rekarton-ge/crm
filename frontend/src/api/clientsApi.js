@@ -1,5 +1,6 @@
 // src/api/clientsApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import axios from "axios";
 
 export const clientsApi = createApi({
     reducerPath: 'clientsApi',
@@ -77,3 +78,15 @@ export const {
     useGetClientGroupsQuery,  // Хук для получения списка групп
     useGetTagsQuery,          // Хук для получения списка тегов
 } = clientsApi;
+
+const API_URL = 'http://localhost:8000/api/clients/';
+
+export const getClients = async () => {
+  try {
+    const response = await axios.get(API_URL);
+    return response.data; // Возвращаем список клиентов
+  } catch (error) {
+    console.error('Ошибка при загрузке списка клиентов:', error);
+    throw error;
+  }
+};

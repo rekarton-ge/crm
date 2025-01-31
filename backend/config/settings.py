@@ -151,3 +151,4 @@ CORS_ALLOWED_ORIGINS = [
 
 # Если вы хотите разрешить запросы со всех источников (небезопасно для production):
 # CORS_ALLOW_ALL_ORIGINS = True
+
