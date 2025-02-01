@@ -257,36 +257,57 @@ const DocumentsPage = () => {
   />
 </Tabs.TabPane>
 
-        {/* Вкладка: Счета */}
-        <Tabs.TabPane tab="Счета на оплату" key="3">
-          <Table
-            rowSelection={{
-              selectedRowKeys,
-              onChange: (keys) => {
-                setSelectedRowKeys(keys);
-                setSelectedDeleteType("invoices");
-              },
-            }}
-            columns={[
-              { title: "Номер", dataIndex: "number", key: "number" },
-              { title: "Сумма", dataIndex: "amount", key: "amount" },
-              { title: "Клиент", dataIndex: "client_name", key: "client_name" },
-              {
-                title: "Дата",
-                dataIndex: "date",
-                key: "date",
-                render: (date) => dayjs(date).format("DD.MM.YYYY"),
-              },
-              {
-                title: "Статус оплаты",
-                dataIndex: "payment_status",
-                key: "payment_status",
-              },
-            ]}
-            dataSource={invoices}
-            rowKey="id"
-          />
-        </Tabs.TabPane>
+{/* Вкладка: Счета на оплату */}
+<Tabs.TabPane tab="Счета на оплату" key="3">
+  <Table
+    rowSelection={{
+      selectedRowKeys,
+      onChange: (keys) => {
+        setSelectedRowKeys(keys);
+        setSelectedDeleteType("invoices");
+      }
+    }}
+    columns={[
+      { title: "Номер", dataIndex: "number", key: "number" },
+      {
+        title: "Дата",
+        dataIndex: "date",
+        key: "date",
+        render: (date) => dayjs(date).format("DD.MM.YYYY")
+      },
+      {
+        title: "Клиент",
+        key: "client",
+        render: (_, record) => record.client?.name || "—"
+      },
+      {
+        title: "Сумма",
+        dataIndex: "total_amount",
+        key: "amount",
+        render: (value) =>
+          value ? `${Number(value).toLocaleString("ru-RU")} ₽` : "—"
+      },
+      {
+        title: "Договор",
+        key: "contract",
+        render: (_, record) => record.contract?.number || "—"
+      },
+      {
+        title: "Спецификация",
+        key: "specification",
+        render: (_, record) => record.specification?.number || "—"
+      },
+      {
+        title: "Статус",
+        dataIndex: "status",
+        key: "status",
+        render: (status) => status || "—"
+      }
+    ]}
+    dataSource={invoices?.results || invoices || []}
+    rowKey="id"
+  />
+</Tabs.TabPane>
 
         {/* Вкладка: УПД */}
         <Tabs.TabPane tab="УПД" key="4">
