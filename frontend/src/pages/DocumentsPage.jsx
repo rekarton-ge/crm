@@ -64,42 +64,93 @@ const DocumentsPage = () => {
       const values = await form.validateFields();
       const formData = new FormData();
 
+      // Общие поля для всех документов
       formData.append("number", values.number);
-      formData.append("name", values.name || "");
       formData.append("client", values.client);
       formData.append("date", values.date.format("YYYY-MM-DD"));
-      formData.append("status", values.status || "");
 
+      // Условные поля
+      if (values.name) formData.append("name", values.name);
+      if (values.amount) formData.append("amount", values.amount);
+      if (values.status) formData.append("status", values.status);
+
+      // Прикрепление файла
       if (fileList.length > 0) {
         formData.append("file", fileList[0].originFileObj);
       }
 
-      if (modalType === "contract") {
-        await createContract(formData);
-        message.success("Договор успешно создан");
+      // Выбор API для создания документа
+      let apiFunction;
+      switch (modalType) {
+        case "contract":
+          apiFunction = createContract;
+          break;
+        case "specification":
+          apiFunction = createSpecification;
+          break;
+        case "invoice":
+          apiFunction = createInvoice;
+          break;
+        case "upd":
+          apiFunction = createUPD;
+          break;
+        default:
+          throw new Error("Неизвестный тип документа");
       }
 
+      await apiFunction(formData);
+      message.success("Документ успешно создан");
+
+      // Сброс состояния
       fetchAllData();
       setModalType(null);
       form.resetFields();
       setFileList([]);
     } catch (error) {
-      message.error("Ошибка при создании договора");
+      message.error("Ошибка при создании документа");
+      console.error(error);
     }
   };
 
   const handleDeleteSelected = async () => {
     try {
-      if (selectedDeleteType === "contracts") {
-        await Promise.all(selectedRowKeys.map(id => deleteContract(id)));
-        message.success("Выбранные договоры удалены");
+      let deleteFunction;
+      switch (selectedDeleteType) {
+        case "contracts":
+          deleteFunction = deleteContract;
+          break;
+        case "specifications":
+          deleteFunction = deleteSpecification;
+          break;
+        case "invoices":
+          deleteFunction = deleteInvoice;
+          break;
+        case "upds":
+          deleteFunction = deleteUPD;
+          break;
+        default:
+          throw new Error("Неизвестный тип для удаления");
       }
+
+      await Promise.all(selectedRowKeys.map((id) => deleteFunction(id)));
+      message.success("Выбранные элементы удалены");
 
       setSelectedRowKeys([]);
       fetchAllData();
     } catch (error) {
       message.error("Ошибка при удалении");
+      console.error(error);
     }
+  };
+
+  const getDocumentTypeLabel = (type) => {
+    const labels = {
+      contract: "договора",
+      specification: "спецификации",
+      invoice: "счёта",
+      upd: "УПД",
+    };
+    return labels[type] || "документа";
   };
 
   const menu = (
@@ -127,8 +178,11 @@ const DocumentsPage = () => {
         </Dropdown>
 
         {selectedRowKeys.length > 0 && (
-          <Popconfirm title="Удалить выбранные элементы?" onConfirm={handleDeleteSelected}>
-            <Button type="danger" icon={<DeleteOutlined />}>
+          <Popconfirm
+            title="Удалить выбранные элементы?"
+            onConfirm={handleDeleteSelected}
+          >
+            <Button danger icon={<DeleteOutlined />}>
               Удалить выбранные
             </Button>
           </Popconfirm>
@@ -136,6 +190,7 @@ const DocumentsPage = () => {
       </div>
 
       <Tabs defaultActiveKey="1">
+        {/* Вкладка: Договоры */}
         <Tabs.TabPane tab="Договоры" key="1">
           <Table
             rowSelection={{
@@ -143,57 +198,195 @@ const DocumentsPage = () => {
               onChange: (keys) => {
                 setSelectedRowKeys(keys);
                 setSelectedDeleteType("contracts");
-              }
+              },
             }}
             columns={[
               { title: "Номер", dataIndex: "number", key: "number" },
               { title: "Название", dataIndex: "name", key: "name" },
               { title: "Клиент", dataIndex: "client_name", key: "client_name" },
-              { title: "Дата", dataIndex: "date", key: "date", render: date => dayjs(date).format("DD.MM.YYYY") },
-              { title: "Статус", dataIndex: "status", key: "status" }
+              {
+                title: "Дата",
+                dataIndex: "date",
+                key: "date",
+                render: (date) => dayjs(date).format("DD.MM.YYYY"),
+              },
+              { title: "Статус", dataIndex: "status", key: "status" },
             ]}
             dataSource={contracts}
             rowKey="id"
           />
         </Tabs.TabPane>
+
+        {/* Вкладка: Спецификации */}
+<Tabs.TabPane tab="Спецификации" key="2">
+  <Table
+    rowSelection={{
+      selectedRowKeys,
+      onChange: (keys) => {
+        setSelectedRowKeys(keys);
+        setSelectedDeleteType("specifications");
+      },
+    }}
+    columns={[
+      { title: "Номер", dataIndex: "number", key: "number" },
+      {
+        title: "Дата",
+        dataIndex: "date",
+        key: "date",
+        render: (date) => dayjs(date).format("DD.MM.YYYY"),
+      },
+      { title: "Клиент", dataIndex: "client_name", key: "client_name" },
+      {
+        title: "Договор",
+        dataIndex: "contract_number",
+        key: "contract",
+        render: (text) => text || "—"
+      },
+      {
+        title: "Сумма",
+        dataIndex: "total_amount", // Исправлено на total_amount
+        key: "total_amount",
+        render: (value) => {
+          if (!value || value === "0.00") return "—";
+          return `${Number(value).toLocaleString("ru-RU")} ₽`;
+        }
+      }
+    ]}
+    dataSource={specifications?.results || specifications || []} // Защита от undefined
+    rowKey="id"
+  />
+</Tabs.TabPane>
+
+        {/* Вкладка: Счета */}
+        <Tabs.TabPane tab="Счета на оплату" key="3">
+          <Table
+            rowSelection={{
+              selectedRowKeys,
+              onChange: (keys) => {
+                setSelectedRowKeys(keys);
+                setSelectedDeleteType("invoices");
+              },
+            }}
+            columns={[
+              { title: "Номер", dataIndex: "number", key: "number" },
+              { title: "Сумма", dataIndex: "amount", key: "amount" },
+              { title: "Клиент", dataIndex: "client_name", key: "client_name" },
+              {
+                title: "Дата",
+                dataIndex: "date",
+                key: "date",
+                render: (date) => dayjs(date).format("DD.MM.YYYY"),
+              },
+              {
+                title: "Статус оплаты",
+                dataIndex: "payment_status",
+                key: "payment_status",
+              },
+            ]}
+            dataSource={invoices}
+            rowKey="id"
+          />
+        </Tabs.TabPane>
+
+        {/* Вкладка: УПД */}
+        <Tabs.TabPane tab="УПД" key="4">
+          <Table
+            rowSelection={{
+              selectedRowKeys,
+              onChange: (keys) => {
+                setSelectedRowKeys(keys);
+                setSelectedDeleteType("upds");
+              },
+            }}
+            columns={[
+              { title: "Номер", dataIndex: "number", key: "number" },
+              {
+                title: "Дата составления",
+                dataIndex: "creation_date",
+                key: "creation_date",
+                render: (date) => dayjs(date).format("DD.MM.YYYY"),
+              },
+              { title: "Сумма", dataIndex: "amount", key: "amount" },
+              { title: "Статус", dataIndex: "status", key: "status" },
+            ]}
+            dataSource={upds}
+            rowKey="id"
+          />
+        </Tabs.TabPane>
       </Tabs>
 
-      {/* ✅ МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ДОГОВОРА */}
+      {/* Универсальное модальное окно */}
       <Modal
-        title="Создание договора"
-        open={modalType === "contract"}
+        title={`Создание ${getDocumentTypeLabel(modalType)}`}
+        open={!!modalType}
         onCancel={() => setModalType(null)}
         onOk={handleCreate}
         okText="Создать"
         cancelText="Отмена"
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="number" label="Номер договора" rules={[{ required: true, message: "Введите номер" }]}>
+          <Form.Item
+            name="number"
+            label="Номер"
+            rules={[{ required: true, message: "Обязательное поле" }]}
+          >
             <Input />
           </Form.Item>
-          <Form.Item name="name" label="Название договора">
-            <Input />
-          </Form.Item>
-          <Form.Item name="client" label="Клиент" rules={[{ required: true, message: "Выберите клиента" }]}>
+
+          {modalType !== "upd" && (
+            <Form.Item name="name" label="Название">
+              <Input />
+            </Form.Item>
+          )}
+
+          <Form.Item
+            name="client"
+            label="Клиент"
+            rules={[{ required: true, message: "Выберите клиента" }]}
+          >
             <Select placeholder="Выберите клиента">
-              {clients.map(client => (
-                <Option key={client.id} value={client.id}>{client.name}</Option>
+              {clients.map((client) => (
+                <Option key={client.id} value={client.id}>
+                  {client.name}
+                </Option>
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name="date" label="Дата" rules={[{ required: true, message: "Выберите дату" }]}>
+
+          {modalType === "invoice" && (
+            <Form.Item
+              name="amount"
+              label="Сумма"
+              rules={[{ required: true, message: "Введите сумму" }]}
+            >
+              <Input type="number" />
+            </Form.Item>
+          )}
+
+          <Form.Item
+            name="date"
+            label="Дата"
+            rules={[{ required: true, message: "Выберите дату" }]}
+          >
             <DatePicker format="DD.MM.YYYY" />
           </Form.Item>
-          <Form.Item name="status" label="Статус">
-            <Select>
-              <Option value="Подписан">Подписан</Option>
-              <Option value="Не подписан">Не подписан</Option>
-              <Option value="На согласовании">На согласовании</Option>
-            </Select>
-          </Form.Item>
+
+          {(modalType === "contract" || modalType === "specification") && (
+            <Form.Item name="status" label="Статус">
+              <Select placeholder="Выберите статус">
+                <Option value="Подписан">Подписан</Option>
+                <Option value="Не подписан">Не подписан</Option>
+              </Select>
+            </Form.Item>
+          )}
+
           <Form.Item label="Файл">
-            <Upload beforeUpload={() => false} onChange={({ fileList }) => setFileList(fileList)} fileList={fileList}>
-              <Button icon={<UploadOutlined />}>Загрузить</Button>
+            <Upload
+              beforeUpload={() => false}
+              onChange={({ fileList }) => setFileList(fileList)}
+              fileList={fileList}
+            >
+              <Button icon={<UploadOutlined />}>Загрузить файл</Button>
             </Upload>
           </Form.Item>
         </Form>
