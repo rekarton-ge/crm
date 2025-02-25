@@ -2,6 +2,7 @@
 import React from 'react';
 import { useGetUPDsQuery, useDeleteUPDMutation } from '../../../api/documentsApi';
 import DocumentTable from '../DocumentTable';
+import { message } from 'antd';
 
 const UPDsTab = () => {
   const {
@@ -11,6 +12,17 @@ const UPDsTab = () => {
   } = useGetUPDsQuery();
 
   const [deleteUPD] = useDeleteUPDMutation();
+
+  const handleDeleteMultiple = async (ids) => {
+    try {
+      const deletionPromises = ids.map(id => deleteUPD(id));
+      await Promise.all(deletionPromises);
+      message.success(`Удалено ${ids.length} УПД`);
+    } catch (error) {
+      message.error('Не удалось удалить УПД');
+      console.error(error);
+    }
+  };
 
   const columns = [
     { key: 'number', title: 'Номер' },
@@ -42,6 +54,7 @@ const UPDsTab = () => {
       columns={columns}
       emptyMessage="УПД не найдены"
       onDelete={deleteUPD}
+      onDeleteMultiple={handleDeleteMultiple}
       documentType="upd"
     />
   );

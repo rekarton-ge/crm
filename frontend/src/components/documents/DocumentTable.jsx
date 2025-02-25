@@ -78,26 +78,27 @@ const DocumentTable = ({
     onChange: onSelectChange,
   };
 
-  return (
-    <div>
-      {selectedRowKeys.length > 0 && (
-        <div style={{
-          marginBottom: 10,
-          display: 'flex',
-          alignItems: 'center',
+return (
+  <div>
+    {selectedRowKeys.length > 0 && (
+      <div style={{
+        marginBottom: 10,
+        display: 'flex',
+        alignItems: 'center',
 
-          padding: '10px',
-          borderRadius: '4px'
-        }}>
-            <Button
-              type="primary"
-              danger
-              icon={<DeleteOutlined />}
-            >
-              Удалить выбранные ({selectedRowKeys.length})
-            </Button>
-        </div>
-      )}
+        padding: '3px',
+        borderRadius: '5px'
+      }}>
+        <Button
+          type="primary"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={handleDeleteSelected}
+        >
+          Удалить выбранные ({selectedRowKeys.length})
+        </Button>
+      </div>
+    )}
 
       <Table
         rowSelection={rowSelection}
