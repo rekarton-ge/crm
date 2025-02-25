@@ -3,6 +3,7 @@ import React from 'react';
 import { useGetContractsQuery, useDeleteContractMutation } from '../../../api/documentsApi';
 import { useGetClientQuery } from '../../../api/clientsApi';
 import DocumentTable from '../DocumentTable';
+import { message } from 'antd';
 
 // Компонент для отображения имени клиента
 const ClientName = ({ clientId }) => {
@@ -18,6 +19,19 @@ const ContractsTab = () => {
   } = useGetContractsQuery();
 
   const [deleteContract] = useDeleteContractMutation();
+
+  // Функция для удаления множества документов
+  const handleDeleteMultiple = async (ids) => {
+    try {
+      // Выполняем удаление всех выбранных документов
+      const deletionPromises = ids.map(id => deleteContract(id));
+      await Promise.all(deletionPromises);
+      message.success(`Удалено ${ids.length} договоров`);
+    } catch (error) {
+      message.error('Не удалось удалить договоры');
+      console.error(error);
+    }
+  };
 
   const columns = [
     { key: 'number', title: 'Номер' },
@@ -40,7 +54,7 @@ const ContractsTab = () => {
       data={contractsData}
       columns={columns}
       emptyMessage="Договоры не найдены"
-      onDelete={deleteContract}
+      onDeleteMultiple={handleDeleteMultiple}
       documentType="contract"
     />
   );

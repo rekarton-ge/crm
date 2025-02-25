@@ -1,6 +1,6 @@
 // src/components/documents/DocumentTable.jsx
-import React from 'react';
-import { Table, Spin, Alert, Button, Popconfirm } from 'antd';
+import React, { useState } from 'react';
+import { Table, Spin, Alert, Button, message } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -13,9 +13,11 @@ const DocumentTable = ({
   data,
   columns,
   emptyMessage,
-  onDelete,
+  onDeleteMultiple,
   documentType
 }) => {
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+
   // Форматирование даты
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -26,13 +28,34 @@ const DocumentTable = ({
     }
   };
 
+  // Обработчик выбора строк
+  const onSelectChange = (newSelectedRowKeys) => {
+    setSelectedRowKeys(newSelectedRowKeys);
+  };
+
+  // Обработчик удаления выбранных документов
+  const handleDeleteSelected = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('Выберите документы для удаления');
+      return;
+    }
+
+    try {
+      await onDeleteMultiple(selectedRowKeys);
+      message.success(`Удалено ${selectedRowKeys.length} документов`);
+      setSelectedRowKeys([]); // Очищаем выбор после удаления
+    } catch (error) {
+      message.error('Не удалось удалить документы');
+      console.error(error);
+    }
+  };
+
   if (error) return <Alert message={errorMessage} description={error.message} type="error" showIcon />;
 
   const documents = data?.results || [];
 
   // Преобразуем колонки для Ant Design Table
-  const tableColumns = [
-  ...columns.map(column => ({
+  const tableColumns = columns.map(column => ({
     title: column.title,
     dataIndex: column.key,
     key: column.key,
@@ -47,44 +70,50 @@ const DocumentTable = ({
         return text || '-';
       }
     }
-  })),
-    {
-      title: 'Действия',
-      key: 'actions',
-      render: (_, record) => (
-        <Popconfirm
-          title="Удаление документа"
-          description="Вы уверены, что хотите удалить этот документ?"
-          onConfirm={() => onDelete(record.id)}
-          okText="Да"
-          cancelText="Нет"
-        >
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-          >
-            Удалить
-          </Button>
-        </Popconfirm>
-      ),
-    }
-  ];
+  }));
+
+  // Конфигурация выбора строк
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: onSelectChange,
+  };
 
   return (
-    <Table
-      columns={tableColumns}
-      dataSource={documents}
-      rowKey="id"
-      loading={isLoading}
-      locale={{ emptyText: emptyMessage }}
-      pagination={{
-        showSizeChanger: true,
-        showTotal: (total) => `Всего: ${total}`,
-        defaultPageSize: 10,
-        pageSizeOptions: ['10', '20', '50']
-      }}
-    />
+    <div>
+      {selectedRowKeys.length > 0 && (
+        <div style={{
+          marginBottom: 10,
+          display: 'flex',
+          alignItems: 'center',
+
+          padding: '10px',
+          borderRadius: '4px'
+        }}>
+            <Button
+              type="primary"
+              danger
+              icon={<DeleteOutlined />}
+            >
+              Удалить выбранные ({selectedRowKeys.length})
+            </Button>
+        </div>
+      )}
+
+      <Table
+        rowSelection={rowSelection}
+        columns={tableColumns}
+        dataSource={documents}
+        rowKey="id"
+        loading={isLoading}
+        locale={{ emptyText: emptyMessage }}
+        pagination={{
+          showSizeChanger: true,
+          showTotal: (total) => `Всего: ${total}`,
+          defaultPageSize: 10,
+          pageSizeOptions: ['10', '20', '50']
+        }}
+      />
+    </div>
   );
 };
 
