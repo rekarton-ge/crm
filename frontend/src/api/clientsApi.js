@@ -1,11 +1,7 @@
 // src/api/clientsApi.js
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import axios from "axios";
+import { baseApi } from './baseApi';
 
-export const clientsApi = createApi({
-    reducerPath: 'clientsApi',
-    baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:8000/api/' }),
-    tagTypes: ['Client', 'ClientList'],  // Добавляем тег для списка клиентов
+export const clientsApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
         // Получить список клиентов с пагинацией и поиском
         getClients: builder.query({
@@ -13,15 +9,15 @@ export const clientsApi = createApi({
             providesTags: (result) =>
                 result
                     ? [
-                          { type: 'ClientList', id: 'LIST' },  // Тег для списка клиентов
-                          ...result.results.map(({ id }) => ({ type: 'Client', id })),  // Теги для отдельных клиентов
+                          { type: 'ClientList', id: 'LIST' },
+                          ...result.results.map(({ id }) => ({ type: 'Client', id })),
                       ]
                     : [{ type: 'ClientList', id: 'LIST' }],
         }),
         // Получить данные конкретного клиента по ID
         getClient: builder.query({
             query: (id) => `clients/${id}/`,
-            providesTags: (result, error, id) => [{ type: 'Client', id }],  // Тег для конкретного клиента
+            providesTags: (result, error, id) => [{ type: 'Client', id }],
         }),
         // Создать нового клиента
         createClient: builder.mutation({
@@ -30,7 +26,7 @@ export const clientsApi = createApi({
                 method: 'POST',
                 body: client,
             }),
-            invalidatesTags: [{ type: 'ClientList', id: 'LIST' }],  // Инвалидируем тег списка клиентов после создания
+            invalidatesTags: [{ type: 'ClientList', id: 'LIST' }],
         }),
         // Обновить данные клиента
         updateClient: builder.mutation({
@@ -40,8 +36,8 @@ export const clientsApi = createApi({
                 body: client,
             }),
             invalidatesTags: (result, error, { id }) => [
-                { type: 'Client', id },  // Инвалидируем тег конкретного клиента
-                { type: 'ClientList', id: 'LIST' },  // Инвалидируем тег списка клиентов
+                { type: 'Client', id },
+                { type: 'ClientList', id: 'LIST' },
             ],
         }),
         // Удалить клиента
@@ -51,42 +47,30 @@ export const clientsApi = createApi({
                 method: 'DELETE',
             }),
             invalidatesTags: (result, error, id) => [
-                { type: 'Client', id },  // Инвалидируем тег конкретного клиента
-                { type: 'ClientList', id: 'LIST' },  // Инвалидируем тег списка клиентов
+                { type: 'Client', id },
+                { type: 'ClientList', id: 'LIST' },
             ],
         }),
         // Получить список групп клиентов
         getClientGroups: builder.query({
             query: () => 'client-groups/',
-            transformResponse: (response) => response.results,  // Преобразуем ответ в массив
+            transformResponse: (response) => response.results,
         }),
         // Получить список тегов клиентов
         getTags: builder.query({
             query: () => 'tags/',
-            transformResponse: (response) => response.results,  // Преобразуем ответ в массив
+            transformResponse: (response) => response.results,
         }),
     }),
 });
 
 // Экспортируем хуки для использования в компонентах
 export const {
-    useGetClientsQuery,       // Хук для получения списка клиентов
-    useGetClientQuery,        // Хук для получения данных клиента по ID
-    useCreateClientMutation,  // Хук для создания клиента
-    useUpdateClientMutation,  // Хук для обновления клиента
-    useDeleteClientMutation,  // Хук для удаления клиента
-    useGetClientGroupsQuery,  // Хук для получения списка групп
-    useGetTagsQuery,          // Хук для получения списка тегов
+    useGetClientsQuery,
+    useGetClientQuery,
+    useCreateClientMutation,
+    useUpdateClientMutation,
+    useDeleteClientMutation,
+    useGetClientGroupsQuery,
+    useGetTagsQuery,
 } = clientsApi;
-
-const API_URL = 'http://localhost:8000/api/clients/';
-
-export const getClients = async () => {
-  try {
-    const response = await axios.get(API_URL);
-    return response.data; // Возвращаем список клиентов
-  } catch (error) {
-    console.error('Ошибка при загрузке списка клиентов:', error);
-    throw error;
-  }
-};
