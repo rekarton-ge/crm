@@ -34,7 +34,7 @@ const DocumentsPage = () => {
 
   return (
     <div className="container" style={{ padding: '24px' }}>
-      <h1>Документы</h1>
+
 
       <div style={{ display: 'flex', justifyContent: 'space-between', margin: '16px 0' }}>
         <Button type="primary">Добавить документ</Button>

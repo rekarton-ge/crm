@@ -64,9 +64,9 @@ class Specification(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Клиент")
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE, verbose_name="Договор")
     igk_number = models.CharField(max_length=50, blank=True, verbose_name="Номер ИГК")
-    goods_services = models.TextField(verbose_name="Товары/Услуги")
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Общая сумма")
-    file = models.FileField(upload_to=get_contract_upload_path, blank=True, null=True, verbose_name="Файл спецификации")
+    goods_services = models.TextField(verbose_name="Товары/Услуги", blank=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Общая сумма", blank=True)
+    file = models.FileField(upload_to=get_specification_upload_path, blank=True, null=True, verbose_name="Файл спецификации")
     change_history = models.JSONField(null=True, blank=True, verbose_name="История изменений")
 
     def save(self, *args, **kwargs):
@@ -98,9 +98,9 @@ class Invoice(models.Model):
         choices=[("Оплачен", "Оплачен"), ("Оплачен частично", "Оплачен частично"), ("Не оплачен", "Не оплачен"), ("Отменен", "Отменен")],
         verbose_name="Статус"
     )
-    payment_due_date = models.DateField(verbose_name="Срок оплаты")
-    goods_services = models.TextField(verbose_name="Товары/Услуги")
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Общая сумма")
+    payment_due_date = models.DateField(verbose_name="Срок оплаты", blank=True)
+    goods_services = models.TextField(verbose_name="Товары/Услуги", blank=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Общая сумма", blank=True)
     comment = models.TextField(blank=True, verbose_name="Комментарий")
     file = models.FileField(upload_to=get_invoice_upload_path, blank=True, null=True, verbose_name="Файл счета")
     change_history = models.JSONField(null=True, blank=True, verbose_name="История изменений")
@@ -126,8 +126,8 @@ class UPD(models.Model):
         verbose_name="Статус"
     )
     igk_number = models.CharField(max_length=50, blank=True, verbose_name="Номер ИГК")
-    goods_services = models.TextField(verbose_name="Товары/Услуги")
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Общая сумма")
+    goods_services = models.TextField(verbose_name="Товары/Услуги", blank=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Общая сумма", blank=True)
     signing_status = models.CharField(
         max_length=50,
         choices=[("Подписана по ЭДО", "Подписана по ЭДО"), ("Подписан в оригинале", "Подписан в оригинале"), ("Не подписан", "Не подписан")],
