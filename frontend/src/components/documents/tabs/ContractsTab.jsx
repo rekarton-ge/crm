@@ -20,19 +20,6 @@ const ContractsTab = () => {
 
   const [deleteContract] = useDeleteContractMutation();
 
-  // Функция для удаления множества документов
-  const handleDeleteMultiple = async (ids) => {
-    try {
-      // Выполняем удаление всех выбранных документов
-      const deletionPromises = ids.map(id => deleteContract(id));
-      await Promise.all(deletionPromises);
-      message.success(`Удалено ${ids.length} договоров`);
-    } catch (error) {
-      message.error('Не удалось удалить договоры');
-      console.error(error);
-    }
-  };
-
   const columns = [
     { key: 'number', title: 'Номер' },
     { key: 'date', title: 'Дата' },
@@ -54,8 +41,8 @@ const ContractsTab = () => {
       data={contractsData}
       columns={columns}
       emptyMessage="Договоры не найдены"
-      onDeleteMultiple={handleDeleteMultiple}
-      documentType="contract"
+      onDelete={deleteContract}
+      documentType="договор"
     />
   );
 };
