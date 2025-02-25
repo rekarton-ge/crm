@@ -32,20 +32,22 @@ const DocumentTable = ({
 
   // Преобразуем колонки для Ant Design Table
   const tableColumns = [
-    ...columns.map(column => ({
-      title: column.title,
-      dataIndex: column.key,
-      key: column.key,
-      render: (text, record) => {
-        if (column.format) {
-          return column.format(record[column.key], record);
-        } else if (column.key === 'date') {
-          return formatDate(text);
-        } else {
-          return text || '-';
-        }
+  ...columns.map(column => ({
+    title: column.title,
+    dataIndex: column.key,
+    key: column.key,
+    render: (text, record) => {
+      if (column.render) {
+        return column.render(text, record);
+      } else if (column.format) {
+        return column.format(record[column.key], record);
+      } else if (column.key === 'date') {
+        return formatDate(text);
+      } else {
+        return text || '-';
       }
-    })),
+    }
+  })),
     {
       title: 'Действия',
       key: 'actions',

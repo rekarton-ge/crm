@@ -1,7 +1,14 @@
 // src/components/documents/tabs/ContractsTab.jsx
 import React from 'react';
 import { useGetContractsQuery, useDeleteContractMutation } from '../../../api/documentsApi';
+import { useGetClientQuery } from '../../../api/clientsApi';
 import DocumentTable from '../DocumentTable';
+
+// Компонент для отображения имени клиента
+const ClientName = ({ clientId }) => {
+  const { data: client } = useGetClientQuery(clientId, { skip: !clientId });
+  return <span>{client?.name || '-'}</span>;
+};
 
 const ContractsTab = () => {
   const {
@@ -18,9 +25,10 @@ const ContractsTab = () => {
     {
       key: 'client',
       title: 'Клиент',
-      format: (client) => client?.name || '-'
+      // Используем собственный render вместо format
+      render: (clientId) => <ClientName clientId={clientId} />
     },
-    { key: 'title', title: 'Название' },
+    { key: 'name', title: 'Название' },
     { key: 'status', title: 'Статус' }
   ];
 
