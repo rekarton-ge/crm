@@ -5,7 +5,7 @@ export const documentsApi = baseApi.injectEndpoints({
     // ===== КОНТРАКТЫ =====
     getContracts: builder.query({
       query: () => 'documents/contracts/',
-      providesTags: (result) => 
+      providesTags: (result) =>
         result
           ? [
               { type: 'Document', id: 'CONTRACTS' },
@@ -20,12 +20,20 @@ export const documentsApi = baseApi.injectEndpoints({
     }),
 
     createContract: builder.mutation({
-      query: (data) => ({
-        url: 'documents/contracts/',
-        method: 'POST',
-        body: data,
-        formData: true,
-      }),
+      query: (data) => {
+        // Проверяем, является ли data экземпляром FormData
+        const isFormData = data instanceof FormData;
+
+        return {
+          url: 'documents/contracts/',
+          method: 'POST',
+          body: data,
+          // Если передаем FormData, не устанавливаем заголовок Content-Type,
+          // чтобы браузер автоматически установил правильный boundary
+          headers: isFormData ? undefined : { 'Content-Type': 'application/json' },
+          formData: isFormData,
+        };
+      },
       invalidatesTags: [{ type: 'Document', id: 'CONTRACTS' }],
     }),
 
@@ -43,7 +51,7 @@ export const documentsApi = baseApi.injectEndpoints({
     // ===== СПЕЦИФИКАЦИИ =====
     getSpecifications: builder.query({
       query: () => 'documents/specifications/',
-      providesTags: (result) => 
+      providesTags: (result) =>
         result
           ? [
               { type: 'Document', id: 'SPECIFICATIONS' },
@@ -58,12 +66,19 @@ export const documentsApi = baseApi.injectEndpoints({
     }),
 
     createSpecification: builder.mutation({
-      query: (data) => ({
-        url: 'documents/specifications/',
-        method: 'POST',
-        body: data,
-        formData: true,
-      }),
+      query: (data) => {
+        // Проверяем, является ли data экземпляром FormData
+        const isFormData = data instanceof FormData;
+
+        return {
+          url: 'documents/specifications/',
+          method: 'POST',
+          body: data,
+          // Если передаем FormData, не устанавливаем заголовок Content-Type
+          headers: isFormData ? undefined : { 'Content-Type': 'application/json' },
+          formData: isFormData,
+        };
+      },
       invalidatesTags: [{ type: 'Document', id: 'SPECIFICATIONS' }],
     }),
 
@@ -81,7 +96,7 @@ export const documentsApi = baseApi.injectEndpoints({
     // ===== СЧЕТА =====
     getInvoices: builder.query({
       query: () => 'documents/invoices/',
-      providesTags: (result) => 
+      providesTags: (result) =>
         result
           ? [
               { type: 'Document', id: 'INVOICES' },
@@ -96,12 +111,17 @@ export const documentsApi = baseApi.injectEndpoints({
     }),
 
     createInvoice: builder.mutation({
-      query: (data) => ({
-        url: 'documents/invoices/',
-        method: 'POST',
-        body: data,
-        formData: true,
-      }),
+      query: (data) => {
+        const isFormData = data instanceof FormData;
+
+        return {
+          url: 'documents/invoices/',
+          method: 'POST',
+          body: data,
+          headers: isFormData ? undefined : { 'Content-Type': 'application/json' },
+          formData: isFormData,
+        };
+      },
       invalidatesTags: [{ type: 'Document', id: 'INVOICES' }],
     }),
 
@@ -119,7 +139,7 @@ export const documentsApi = baseApi.injectEndpoints({
     // ===== УПД =====
     getUPDs: builder.query({
       query: () => 'documents/upds/',
-      providesTags: (result) => 
+      providesTags: (result) =>
         result
           ? [
               { type: 'Document', id: 'UPDS' },
@@ -134,12 +154,17 @@ export const documentsApi = baseApi.injectEndpoints({
     }),
 
     createUPD: builder.mutation({
-      query: (data) => ({
-        url: 'documents/upds/',
-        method: 'POST',
-        body: data,
-        formData: true,
-      }),
+      query: (data) => {
+        const isFormData = data instanceof FormData;
+
+        return {
+          url: 'documents/upds/',
+          method: 'POST',
+          body: data,
+          headers: isFormData ? undefined : { 'Content-Type': 'application/json' },
+          formData: isFormData,
+        };
+      },
       invalidatesTags: [{ type: 'Document', id: 'UPDS' }],
     }),
 
@@ -153,6 +178,16 @@ export const documentsApi = baseApi.injectEndpoints({
         { type: 'Document', id: `UPD-${id}` }
       ],
     }),
+
+    // Новый эндпоинт для извлечения данных из PDF
+    extractPDFData: builder.mutation({
+      query: (formData) => ({
+        url: 'documents/extract-pdf-data/',
+        method: 'POST',
+        body: formData,
+        formData: true,
+      }),
+    }),
   }),
 });
 
@@ -163,22 +198,25 @@ export const {
   useGetContractByIdQuery,
   useCreateContractMutation,
   useDeleteContractMutation,
-  
+
   // Спецификации
   useGetSpecificationsQuery,
   useGetSpecificationByIdQuery,
   useCreateSpecificationMutation,
   useDeleteSpecificationMutation,
-  
+
   // Счета
   useGetInvoicesQuery,
   useGetInvoiceByIdQuery,
   useCreateInvoiceMutation,
   useDeleteInvoiceMutation,
-  
+
   // УПД
   useGetUPDsQuery,
   useGetUPDByIdQuery,
   useCreateUPDMutation,
   useDeleteUPDMutation,
+
+  // Извлечение данных из PDF
+  useExtractPDFDataMutation,
 } = documentsApi;

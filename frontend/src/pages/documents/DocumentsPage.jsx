@@ -7,11 +7,13 @@ import InvoicesTab from '../../components/documents/tabs/InvoicesTab';
 import UPDsTab from '../../components/documents/tabs/UPDsTab';
 import CreateDocumentModal from '../../components/documents/CreateDocumentModal';
 import CreateContractModal from '../../components/documents/CreateContractModal';
+import CreateSpecificationModal from '../../components/documents/CreateSpecificationModal';
 
 const DocumentsPage = () => {
   const [activeTab, setActiveTab] = useState('contract');
   const [isCreateDocumentModalVisible, setIsCreateDocumentModalVisible] = useState(false);
   const [isCreateContractModalVisible, setIsCreateContractModalVisible] = useState(false);
+  const [isCreateSpecificationModalVisible, setIsCreateSpecificationModalVisible] = useState(false);
 
   const items = [
     {
@@ -46,6 +48,8 @@ const DocumentsPage = () => {
     // Открываем соответствующее модальное окно в зависимости от типа
     if (type === 'contract') {
       setIsCreateContractModalVisible(true);
+    } else if (type === 'specification') {
+      setIsCreateSpecificationModalVisible(true);
     }
     // Здесь можно добавить обработку для других типов документов
   };
@@ -74,6 +78,11 @@ const DocumentsPage = () => {
       <CreateContractModal
         visible={isCreateContractModalVisible}
         onCancel={() => setIsCreateContractModalVisible(false)}
+      />
+
+      <CreateSpecificationModal
+        visible={isCreateSpecificationModalVisible}
+        onCancel={() => setIsCreateSpecificationModalVisible(false)}
       />
     </div>
   );

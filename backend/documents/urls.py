@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views_pdf_extractor import ExtractPDFDataView
 
 urlpatterns = [
     # Contract (Договор)
@@ -21,4 +22,5 @@ urlpatterns = [
     # Дополнительные представления
     path('contracts/<int:contract_id>/specifications/', views.ContractSpecificationsView.as_view(), name='contract-specifications'),
     path('specifications/<int:specification_id>/invoices/', views.SpecificationInvoicesView.as_view(), name='specification-invoices'),
+    path('extract-pdf-data/', ExtractPDFDataView.as_view(), name='extract-pdf-data'),
 ]
