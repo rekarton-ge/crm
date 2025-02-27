@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('clients.urls')), # Подключаем маршруты из приложения clients
     path('api/documents/', include('documents.urls')),  # Подключаем маршруты из приложения documents
+    path('api/products/', include('products.urls')),
 ]
 
 

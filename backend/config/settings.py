@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'clients.apps.ClientsConfig',
     'corsheaders',
     'documents.apps.DocumentsConfig',
+    'products.apps.ProductsConfig',
 ]
 
 MIDDLEWARE = [
