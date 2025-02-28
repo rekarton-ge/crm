@@ -188,6 +188,12 @@ export const documentsApi = baseApi.injectEndpoints({
         formData: true,
       }),
     }),
+
+    // Добавляем алиас для getContractById
+    getContract: builder.query({
+      query: (id) => `documents/contracts/${id}/`,
+      providesTags: (result, error, id) => [{ type: 'Document', id: `Contract-${id}` }],
+    }),
   }),
 });
 
@@ -196,6 +202,7 @@ export const {
   // Контракты
   useGetContractsQuery,
   useGetContractByIdQuery,
+  useGetContractQuery, // Добавляем экспорт для нового хука
   useCreateContractMutation,
   useDeleteContractMutation,
 

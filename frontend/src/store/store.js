@@ -1,14 +1,18 @@
 // src/store/store.js
 import { configureStore } from '@reduxjs/toolkit';
-import { clientsApi } from '../api/clientsApi'; // Корректный путь импорта
+import { clientsApi } from '../api/clientsApi';
+import { documentsApi } from '../api/documentsApi'; // Добавляем импорт API документов
 
 const store = configureStore({
     reducer: {
         [clientsApi.reducerPath]: clientsApi.reducer,
-        // Добавьте другие редюсеры здесь, если необходимо
+        [documentsApi.reducerPath]: documentsApi.reducer, // Добавляем reducer для документов
     },
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(clientsApi.middleware),
+        getDefaultMiddleware().concat(
+            clientsApi.middleware,
+            documentsApi.middleware // Добавляем middleware для документов
+        ),
 });
 
-export default store; // Экспортируем store как default экспорт
+export default store;

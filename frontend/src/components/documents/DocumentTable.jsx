@@ -44,7 +44,8 @@ const DocumentTable = ({
   columns,
   emptyMessage,
   onDelete,
-  documentType = 'default'
+  documentType = 'default',
+  onRowClick
 }) => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
@@ -129,6 +130,13 @@ const DocumentTable = ({
     }
   }));
 
+  // Настройка для обработки клика по строке
+  const onRow = onRowClick
+    ? (record) => ({
+        onClick: () => onRowClick(record),
+      })
+    : undefined;
+
   return (
     <>
       {selectedRowKeys.length > 0 && (
@@ -160,6 +168,7 @@ const DocumentTable = ({
         }}
         locale={{ emptyText: emptyMessage }}
         pagination={false}
+        onRow={onRow}
       />
     </>
   );

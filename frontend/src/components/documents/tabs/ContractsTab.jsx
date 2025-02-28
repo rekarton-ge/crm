@@ -3,7 +3,9 @@ import React from 'react';
 import { useGetContractsQuery, useDeleteContractMutation } from '../../../api/documentsApi';
 import { useGetClientQuery } from '../../../api/clientsApi';
 import DocumentTable from '../DocumentTable';
-import { message } from 'antd';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button, Tooltip } from 'antd';
+import { EyeOutlined } from '@ant-design/icons';
 
 // Компонент для отображения имени клиента
 const ClientName = ({ clientId }) => {
@@ -12,6 +14,8 @@ const ClientName = ({ clientId }) => {
 };
 
 const ContractsTab = () => {
+  const navigate = useNavigate();
+
   const {
     data: contractsData,
     isLoading: isContractsLoading,
@@ -20,17 +24,41 @@ const ContractsTab = () => {
 
   const [deleteContract] = useDeleteContractMutation();
 
+  const handleViewContract = (contractId) => {
+    navigate(`/documents/contracts/${contractId}`);
+  };
+
   const columns = [
-    { key: 'number', title: 'Номер' },
+    {
+      key: 'number',
+      title: 'Номер',
+      render: (_, record) => (
+        <Link to={`/documents/contracts/${record.id}`}>
+          {record.number}
+        </Link>
+      )
+    },
     { key: 'date', title: 'Дата' },
     {
       key: 'client',
       title: 'Клиент',
-      // Используем собственный render вместо format
       render: (clientId) => <ClientName clientId={clientId} />
     },
     { key: 'name', title: 'Название' },
-    { key: 'status', title: 'Статус' }
+    { key: 'status', title: 'Статус' },
+    {
+      key: 'actions',
+      title: 'Действия',
+      render: (_, record) => (
+        <Tooltip title="Просмотреть">
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewContract(record.id)}
+          />
+        </Tooltip>
+      )
+    }
   ];
 
   return (
@@ -42,7 +70,7 @@ const ContractsTab = () => {
       columns={columns}
       emptyMessage="Договоры не найдены"
       onDelete={deleteContract}
-      documentType="договор"
+      documentType="contract"
     />
   );
 };
