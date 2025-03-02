@@ -1,6 +1,6 @@
 services:
   postgres:
-    container_name: crm-db
+    container_name: database_crm
     image: postgres:15-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -19,7 +19,7 @@ services:
       - crm_network
 
   redis:
-    container_name: crm-redis
+    container_name: redis_crm
     image: redis:7-alpine
     ports:
       - "6379:6379"
@@ -27,7 +27,7 @@ services:
       - crm_network
 
   backend:
-    container_name: crm-backend
+    container_name: backend_crm
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
@@ -47,7 +47,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    container_name: crm-frontend
+    container_name: frontend_crm
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile
@@ -59,7 +59,7 @@ services:
       - crm_network
 
   celery:
-    container_name: crm-celery
+    container_name: celery_crm
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
