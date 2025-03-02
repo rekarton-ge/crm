@@ -66,6 +66,7 @@ Icon
 .env.dev
 .env.prod
 .env.staging
+!.env.example  # Если захотим добавить пример env файла
 
 # Logs
 logs
