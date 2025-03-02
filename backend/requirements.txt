@@ -21,7 +21,7 @@ Pillow==10.1.0
 python-magic==0.4.27
 
 # Утилиты для работы с данными
-djangorestframework-csv==0.1.1
+djangorestframework-csv==2.1.1
 openpyxl==3.1.2
 PyPDF2==3.0.1
 pandas==2.1.3
