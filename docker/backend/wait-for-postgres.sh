@@ -3,11 +3,12 @@
 
 set -e
 
-host="$1"
-shift
-cmd="$@"
+host="postgres"
+db_name="crm_db"
+db_user="crm_user"
+db_password="crm_password"
 
-until PGPASSWORD=$POSTGRES_PASSWORD psql -h "$host" -U "crm_user" -d "crm_db" -c '\q'; do
+until PGPASSWORD=$db_password psql -h "$host" -U "$db_user" -d "$db_name" -c '\q'; do
   >&2 echo "Postgres is unavailable - sleeping"
   sleep 1
 done

@@ -58,7 +58,7 @@ services:
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
-    command: celery -A crm worker -l info
+    command: celery -A config worker -l info
     volumes:
       - ./backend:/app/backend
     depends_on:
