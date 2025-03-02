@@ -38,18 +38,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    environment:
-      - DB_HOST=postgres
-      - DATABASE_URL=postgres://crm_user:crm_password@postgres:5432/crm_db
-      - REDIS_URL=redis://redis:6379/0
-      - DJANGO_SETTINGS_MODULE=config.settings
-      - ALLOWED_HOSTS=*
-      - DEBUG=True
     ports:
       - "8000:8000"
-    command: python manage.py runserver 0.0.0.0:8000
     networks:
       - crm_network
+    restart: unless-stopped
 
   frontend:
     container_name: crm-frontend

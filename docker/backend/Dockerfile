@@ -14,18 +14,13 @@ WORKDIR /app/backend
 
 # Копируем requirements и устанавливаем зависимости
 COPY backend/requirements.txt .
-RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем остальной код проекта
 COPY backend/ .
 
-# Создаем скрипт ожидания базы данных
-COPY docker/backend/wait-for-postgres.sh /wait-for-postgres.sh
-RUN chmod +x /wait-for-postgres.sh
-
 # Открываем порт для Django
 EXPOSE 8000
 
-# Команда по умолчанию
-CMD ["/wait-for-postgres.sh"]
+# Команда для запуска сервера разработки Django
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
