@@ -71,7 +71,8 @@ class BaseTestCase(TestCase):
                 session_key=tokens["access"],
                 ip_address='127.0.0.1',
                 started_at=timezone.now(),
-                last_activity=timezone.now()
+                last_activity=timezone.now(),
+                user_agent='Test User Agent'
             )
         
         return self.api_client 

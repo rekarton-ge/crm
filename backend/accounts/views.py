@@ -2,7 +2,7 @@
 Представления для приложения accounts.
 """
 
-from rest_framework import status, generics
+from rest_framework import status, generics, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -15,7 +15,7 @@ from accounts.serializers import (
     LoginSerializer,
     RegisterSerializer
 )
-from accounts.models import UserSession
+from accounts.models import UserSession, LoginAttempt
 
 
 class LoginView(APIView):
@@ -26,15 +26,41 @@ class LoginView(APIView):
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        user = serializer.validated_data['user']
-        refresh = RefreshToken.for_user(user)
-        
-        return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-        })
+        try:
+            serializer.is_valid(raise_exception=True)
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
+            
+            # Создаем запись о попытке входа
+            LoginAttempt.objects.create(
+                username=user.username,
+                ip_address=request.META.get('REMOTE_ADDR', ''),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                was_successful=True
+            )
+            
+            # Создаем сессию
+            UserSession.objects.create(
+                user=user,
+                session_key=str(refresh),
+                ip_address=request.META.get('REMOTE_ADDR', ''),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                device_type='other'
+            )
+            
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            })
+        except serializers.ValidationError as e:
+            # Создаем запись о неудачной попытке входа
+            LoginAttempt.objects.create(
+                username=request.data.get('username', ''),
+                ip_address=request.META.get('REMOTE_ADDR', ''),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                was_successful=False
+            )
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RegisterView(APIView):
@@ -48,10 +74,7 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         
-        return Response(
-            UserSerializer(user).data,
-            status=status.HTTP_201_CREATED
-        )
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):

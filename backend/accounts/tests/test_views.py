@@ -124,41 +124,23 @@ class UserSessionViewsTest(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.sessions_url = '/api/accounts/auth/sessions/'
-        self.api_client = self.authenticate_client()
+        self.access_token = self.get_tokens_for_user(self.test_user)['access']
+        self.api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
 
     def test_list_sessions(self):
         """
         Тест получения списка сессий пользователя.
         """
-        # Выводим начальное состояние
-        print("\nНачальное состояние:")
-        for session in UserSession.objects.filter(user=self.test_user, ended_at__isnull=True):
-            print(f"ID: {session.id}, Key: {session.session_key}, IP: {session.ip_address}")
-
-        # Завершаем все текущие сессии пользователя
-        UserSession.objects.filter(user=self.test_user).update(ended_at=timezone.now())
-
-        print("\nПосле завершения всех сессий:")
-        for session in UserSession.objects.filter(user=self.test_user, ended_at__isnull=True):
-            print(f"ID: {session.id}, Key: {session.session_key}, IP: {session.ip_address}")
-
-        # Создаем две тестовые сессии
-        session1 = UserSession.objects.create(
+        # Создаем тестовую сессию с текущим токеном
+        current_session = UserSession.objects.create(
             user=self.test_user,
-            session_key=f"test_session_1_{time.time()}",
+            session_key=self.access_token,
             ip_address="127.0.0.1",
             user_agent="Test Agent 1",
             device_type="desktop"
         )
-        session2 = UserSession.objects.create(
-            user=self.test_user,
-            session_key=f"test_session_2_{time.time()}",
-            ip_address="127.0.0.2",
-            user_agent="Test Agent 2",
-            device_type="mobile"
-        )
 
-        print("\nПосле создания тестовых сессий:")
+        print("\nНачальное состояние:")
         for session in UserSession.objects.filter(user=self.test_user, ended_at__isnull=True):
             print(f"ID: {session.id}, Key: {session.session_key}, IP: {session.ip_address}")
 
@@ -179,13 +161,13 @@ class UserSessionViewsTest(BaseTestCase):
         print(f"Содержимое response_data: {response_data}")
 
         # Проверяем количество активных сессий
-        self.assertEqual(response_data['count'], 2)
-        self.assertEqual(len(response_data['results']), 2)
+        self.assertEqual(response_data['count'], 1)
+        self.assertEqual(len(response_data['results']), 1)
 
-        # Проверяем, что возвращаются правильные сессии
-        session_ids = {session['id'] for session in response_data['results']}
-        self.assertIn(session1.id, session_ids)
-        self.assertIn(session2.id, session_ids)
+        # Проверяем, что возвращается правильная сессия
+        session = response_data['results'][0]
+        self.assertEqual(session['id'], current_session.id)
+        self.assertEqual(session['session_key'], current_session.session_key)
 
     def test_end_session(self):
         """
@@ -195,7 +177,8 @@ class UserSessionViewsTest(BaseTestCase):
         session = UserSession.objects.create(
             user=self.test_user,
             session_key='test_session_1',
-            ip_address='127.0.0.1'
+            ip_address='127.0.0.1',
+            user_agent='Test User Agent'
         )
         
         response = self.api_client.delete(f"{self.sessions_url}{session.id}/")

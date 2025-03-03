@@ -1,151 +1,164 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
 class UserSession(models.Model):
     """
-    Информация о сессии пользователя.
-    Отслеживает активные сеансы пользователей.
+    Модель для хранения информации о сессиях пользователей.
     """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='sessions',
-        verbose_name=_('Пользователь')
+        verbose_name='Пользователь'
     )
 
     session_key = models.CharField(
-        _('Ключ сессии/токена'),
-        max_length=500,
-        unique=True
+        max_length=255,
+        unique=True,
+        verbose_name='Ключ сессии'
     )
 
     ip_address = models.GenericIPAddressField(
-        _('IP-адрес'),
         null=True,
-        blank=True
+        blank=True,
+        verbose_name='IP адрес'
     )
 
     user_agent = models.TextField(
-        _('Информация о браузере'),
-        blank=True
+        null=True,
+        blank=True,
+        verbose_name='User Agent'
     )
 
     device_type = models.CharField(
-        _('Тип устройства'),
         max_length=20,
         choices=[
-            ('desktop', _('Компьютер')),
-            ('tablet', _('Планшет')),
-            ('mobile', _('Телефон')),
-            ('other', _('Другое'))
+            ('desktop', 'Desktop'),
+            ('mobile', 'Mobile'),
+            ('tablet', 'Tablet'),
+            ('other', 'Other')
         ],
-        default='other'
+        default='other',
+        verbose_name='Тип устройства'
     )
 
     location = models.CharField(
-        _('Примерное местоположение'),
         max_length=255,
-        blank=True
+        blank=True,
+        verbose_name='Местоположение'
     )
 
     started_at = models.DateTimeField(
-        _('Время начала сессии'),
-        auto_now_add=True
+        auto_now_add=True,
+        verbose_name='Время начала'
     )
 
     last_activity = models.DateTimeField(
-        _('Время последней активности'),
-        auto_now=True
+        auto_now=True,
+        verbose_name='Последняя активность'
     )
 
     ended_at = models.DateTimeField(
-        _('Время завершения сессии'),
         null=True,
-        blank=True
+        blank=True,
+        verbose_name='Время завершения'
     )
 
     class Meta:
-        verbose_name = _('сессия пользователя')
-        verbose_name_plural = _('сессии пользователей')
-        ordering = ['-started_at']
+        verbose_name = 'Сессия пользователя'
+        verbose_name_plural = 'Сессии пользователей'
+        ordering = ['-last_activity']
 
     def __str__(self):
-        return f'Сессия {self.user.username} ({self.started_at})'
-
-    def is_active(self):
-        """
-        Проверяет, активна ли сессия
-        """
-        return self.ended_at is None
+        return f"Сессия {self.user.username} ({self.started_at})"
 
     def end_session(self):
         """
-        Завершает сессию пользователя
+        Завершает текущую сессию.
         """
-        from django.utils import timezone
-        if self.is_active():
+        if not self.ended_at:
             self.ended_at = timezone.now()
-            self.save(update_fields=['ended_at'])
+            self.save()
+
+    def is_active(self):
+        """
+        Проверяет, активна ли сессия.
+        """
+        return self.ended_at is None
+
+    def update_activity(self):
+        """
+        Обновляет время последней активности.
+        """
+        self.last_activity = timezone.now()
+        self.save()
+
+    def get_device_info(self):
+        """
+        Возвращает информацию об устройстве.
+        """
+        return {
+            'device_type': self.device_type,
+            'user_agent': self.user_agent,
+            'ip_address': self.ip_address,
+            'location': self.location
+        }
+
+    def get_session_duration(self):
+        """
+        Возвращает длительность сессии.
+        """
+        end_time = self.ended_at or timezone.now()
+        return end_time - self.started_at
 
     @classmethod
     def get_active_sessions(cls, user):
         """
-        Возвращает активные сессии пользователя
+        Возвращает все активные сессии пользователя.
         """
-        return cls.objects.filter(user=user, ended_at=None)
+        return cls.objects.filter(user=user, ended_at__isnull=True)
+
+    @classmethod
+    def end_all_user_sessions(cls, user):
+        """
+        Завершает все активные сессии пользователя.
+        """
+        now = timezone.now()
+        cls.objects.filter(user=user, ended_at__isnull=True).update(ended_at=now)
+
+    @classmethod
+    def get_last_active_session(cls, user):
+        """
+        Возвращает последнюю активную сессию пользователя.
+        """
+        return cls.objects.filter(user=user, ended_at__isnull=True).order_by('-last_activity').first()
 
 
 class LoginAttempt(models.Model):
     """
-    Модель для отслеживания попыток входа в систему.
-    Помогает обнаруживать подозрительную активность.
+    Модель для хранения информации о попытках входа.
     """
-    username = models.CharField(
-        _('Использованное имя пользователя'),
-        max_length=150
-    )
-
-    ip_address = models.GenericIPAddressField(
-        _('IP-адрес'),
-        null=True,
-        blank=True
-    )
-
-    user_agent = models.TextField(
-        _('Информация о браузере'),
-        blank=True
-    )
-
-    timestamp = models.DateTimeField(
-        _('Время попытки'),
-        auto_now_add=True
-    )
-
-    was_successful = models.BooleanField(
-        _('Успешность попытки')
-    )
-
-    failure_reason = models.CharField(
-        _('Причина неудачи'),
-        max_length=100,
-        blank=True
-    )
+    username = models.CharField(max_length=150)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    was_successful = models.BooleanField(default=False)
+    failure_reason = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        verbose_name = _('попытка входа')
-        verbose_name_plural = _('попытки входа')
         ordering = ['-timestamp']
 
     def __str__(self):
-        status = 'успешна' if self.was_successful else 'не успешна'
-        return f'Попытка входа {self.username} ({self.timestamp}) - {status}'
+        status = 'успешная' if self.was_successful else 'неудачная'
+        return f"{status} попытка входа для {self.username} ({self.timestamp})"
 
     @classmethod
-    def log_login_attempt(cls, username, ip_address, user_agent, was_successful, failure_reason=''):
+    def log_login_attempt(cls, username, ip_address=None, user_agent=None, was_successful=False, failure_reason=''):
         """
-        Создает запись о попытке входа
+        Логирует попытку входа в систему.
         """
         return cls.objects.create(
             username=username,
@@ -158,84 +171,29 @@ class LoginAttempt(models.Model):
 
 class UserActivity(models.Model):
     """
-    Журнал активности пользователей.
-    Отслеживает все действия пользователей в системе.
+    Модель для хранения информации об активности пользователей.
     """
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='activities',
-        verbose_name=_('Пользователь')
-    )
-
-    session = models.ForeignKey(
-        'UserSession',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='activities',
-        verbose_name=_('Сессия')
-    )
-
-    activity_type = models.CharField(
-        _('Тип активности'),
-        max_length=50,
-        choices=[
-            ('login', _('Вход в систему')),
-            ('logout', _('Выход из системы')),
-            ('view', _('Просмотр')),
-            ('create', _('Создание')),
-            ('update', _('Обновление')),
-            ('delete', _('Удаление')),
-            ('export', _('Экспорт данных')),
-            ('import', _('Импорт данных')),
-            ('api', _('API запрос')),
-            ('other', _('Другое'))
-        ]
-    )
-
-    description = models.TextField(
-        _('Описание действия')
-    )
-
-    timestamp = models.DateTimeField(
-        _('Время действия'),
-        auto_now_add=True
-    )
-
-    ip_address = models.GenericIPAddressField(
-        _('IP-адрес'),
-        null=True,
-        blank=True
-    )
-
-    object_type = models.CharField(
-        _('Тип объекта'),
-        max_length=100,
-        blank=True,
-        help_text=_('Тип объекта, с которым работали')
-    )
-
-    object_id = models.CharField(
-        _('ID объекта'),
-        max_length=100,
-        blank=True,
-        help_text=_('Идентификатор объекта, с которым работали')
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    session = models.ForeignKey(UserSession, on_delete=models.SET_NULL, null=True)
+    activity_type = models.CharField(max_length=50)
+    description = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    object_type = models.CharField(max_length=100, blank=True)
+    object_id = models.CharField(max_length=100, blank=True)
 
     class Meta:
-        verbose_name = _('активность пользователя')
-        verbose_name_plural = _('активности пользователей')
         ordering = ['-timestamp']
+        verbose_name = 'Активность пользователя'
+        verbose_name_plural = 'Активности пользователей'
 
     def __str__(self):
-        return f'{self.user.username}: {self.activity_type} - {self.timestamp}'
+        return f"{self.user.username} - {self.activity_type} ({self.timestamp})"
 
     @classmethod
-    def log_activity(cls, user, activity_type, description, session=None, ip_address=None,
-                     object_type='', object_id=''):
+    def log_activity(cls, user, activity_type, description, session=None, ip_address=None, object_type='', object_id=''):
         """
-        Создает запись об активности пользователя
+        Логирует активность пользователя.
         """
         return cls.objects.create(
             user=user,

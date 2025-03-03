@@ -71,6 +71,9 @@ class CoreAccountsIntegrationTest(BaseTestCase):
         session = UserSession.objects.create(
             user=self.test_user,
             session_key=self.access_token,
+            ip_address='127.0.0.1',
+            user_agent='Test User Agent',
+            device_type='other',
             started_at=timezone.now()
         )
 
@@ -106,6 +109,9 @@ class CoreAccountsIntegrationTest(BaseTestCase):
         session = UserSession.objects.create(
             user=self.test_user,
             session_key=self.access_token,
+            ip_address='127.0.0.1',
+            user_agent='Test User Agent',
+            device_type='other',
             started_at=timezone.now()
         )
         
