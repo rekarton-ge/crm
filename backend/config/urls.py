@@ -39,7 +39,7 @@ urlpatterns = [
 
     # API endpoints для модулей
     path('', include('core.urls', namespace='core')),
-    # path('api/accounts/', include('accounts.api.urls')),
+    path('api/accounts/', include('accounts.api.urls')),
     # path('api/clients/', include('clients.api.urls')),
     # и так далее...
 ]

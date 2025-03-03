@@ -36,15 +36,62 @@ INSTALLED_APPS = [
 
     # Приложения вашего проекта будут добавлены здесь
     'core.apps.CoreConfig',
-    # 'accounts.apps.AccountsConfig',
+    'accounts.apps.AccountsConfig',
     # 'clients.apps.ClientsConfig',
     # и т.д.
 ]
+
+# Устанавливаем кастомную модель пользователя
+AUTH_USER_MODEL = 'accounts.User'
+
+# Настройки аутентификации
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.JWTBackend',  # Наш кастомный бэкенд аутентификации
+    'django.contrib.auth.backends.ModelBackend',  # Стандартный бэкенд Django
+]
+
+# Настройки Django REST framework (обновляем/дополняем существующие)
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100,
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+}
+
+# Настройки JWT
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # Middleware для CORS
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'accounts.middleware.JWTAuthenticationMiddleware',
+    'accounts.middleware.UserActivityMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
