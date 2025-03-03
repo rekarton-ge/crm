@@ -5,6 +5,8 @@
 и связями объектов с тегами.
 """
 
+from typing import Any, Dict, List, Optional, Type
+
 from django.db.models import Count, Q
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404
@@ -15,6 +17,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.request import Request
 from django_filters.rest_framework import DjangoFilterBackend
 
 from core.models.tags import Tag, GenericTaggedItem
@@ -75,7 +78,7 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
         Выбирает сериализатор в зависимости от действия.
 
         Returns:
-            Класс сериализатора в зависимости от текущего действия.
+            Type: Класс сериализатора в зависимости от текущего действия.
         """
         if self.action == 'create':
             return TagCreateSerializer
@@ -100,7 +103,7 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
         lookup = self.kwargs.get(lookup_url_kwarg)
 
         filter_kwargs = {}
-        if lookup.isdigit():
+        if lookup and lookup.isdigit():
             filter_kwargs['id'] = lookup
         else:
             filter_kwargs[self.lookup_field] = lookup
@@ -110,8 +113,8 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
 
         return obj
 
-    @cache_response(timeout=300, key_func='get_tags_cache_key')
-    def list(self, request, *args, **kwargs):
+    @cache_response(timeout=300)
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """
         Получение списка тегов с кэшированием результата.
 
@@ -125,8 +128,8 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
         """
         return super().list(request, *args, **kwargs)
 
-    @cache_response(timeout=300, key_func='get_tag_detail_cache_key')
-    def retrieve(self, request, *args, **kwargs):
+    @cache_response(timeout=300)
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """
         Получение конкретного тега с кэшированием результата.
 
@@ -142,7 +145,7 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     @cache_response(timeout=300)
-    def popular(self, request):
+    def popular(self, request: Request) -> Response:
         """
         Получение популярных тегов.
 
@@ -155,23 +158,23 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
             Response: HTTP ответ со списком популярных тегов
         """
         # Количество тегов, которые нужно вернуть
-        limit = request.query_params.get('limit', 10)
+        limit = request.query_params.get('limit', '10')
         try:
-            limit = int(limit)
-            if limit <= 0:
-                limit = 10
+            limit_int = int(limit)
+            if limit_int <= 0:
+                limit_int = 10
         except ValueError:
-            limit = 10
+            limit_int = 10
 
         # Получаем теги, отсортированные по количеству объектов
-        queryset = self.get_queryset().order_by('-objects_count')[:limit]
+        queryset = self.get_queryset().order_by('-objects_count')[:limit_int]
         serializer = self.get_serializer(queryset, many=True)
 
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
     @cache_response(timeout=300)
-    def objects(self, request, slug=None):
+    def objects(self, request: Request, slug: Optional[str] = None) -> Response:
         """
         Получение объектов, связанных с тегом.
 
@@ -210,9 +213,9 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-    def get_tags_cache_key(self, view_instance, view_method, request, *args, **kwargs):
+    def get_cache_key(self, view_instance: Any, view_method: Any, request: Request, *args: Any, **kwargs: Any) -> str:
         """
-        Создает ключ кэша для списка тегов с учетом параметров фильтрации.
+        Создает ключ кэша в зависимости от метода и параметров.
 
         Args:
             view_instance: Экземпляр представления
@@ -224,26 +227,21 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
         Returns:
             str: Ключ кэша
         """
-        query_params = request.query_params.copy()
-        query_string = '&'.join([f"{k}={v}" for k, v in sorted(query_params.items())])
-        return f'tags_list_{query_string}'
+        # Определяем метод, который вызывается
+        method_name = view_method.__name__
 
-    def get_tag_detail_cache_key(self, view_instance, view_method, request, *args, **kwargs):
-        """
-        Создает ключ кэша для деталей тега.
-
-        Args:
-            view_instance: Экземпляр представления
-            view_method: Метод представления
-            request: HTTP request объект
-            *args: Дополнительные аргументы
-            **kwargs: Дополнительные именованные аргументы
-
-        Returns:
-            str: Ключ кэша
-        """
-        lookup = kwargs.get(self.lookup_url_kwarg or self.lookup_field)
-        return f'tag_detail_{lookup}'
+        if method_name == 'list':
+            query_params = request.query_params.copy()
+            query_string = '&'.join([f"{k}={v}" for k, v in sorted(query_params.items())])
+            return f'tags_list_{query_string}'
+        elif method_name == 'retrieve':
+            lookup = kwargs.get(self.lookup_url_kwarg or self.lookup_field)
+            return f'tag_detail_{lookup}'
+        else:
+            # Для других методов генерируем базовый ключ
+            query_params = request.query_params.copy()
+            query_string = '&'.join([f"{k}={v}" for k, v in sorted(query_params.items())])
+            return f'tag_{method_name}_{query_string}'
 
 
 class TaggedItemViewSet(LoggingMixin, viewsets.ModelViewSet):
@@ -266,7 +264,7 @@ class TaggedItemViewSet(LoggingMixin, viewsets.ModelViewSet):
         Выбирает сериализатор в зависимости от действия.
 
         Returns:
-            Класс сериализатора в зависимости от текущего действия.
+            Type: Класс сериализатора в зависимости от текущего действия.
         """
         if self.action == 'create':
             return TaggedItemCreateSerializer
@@ -280,7 +278,7 @@ class TaggedItemViewSet(LoggingMixin, viewsets.ModelViewSet):
         return GenericTaggedItemSerializer
 
     @action(detail=False, methods=['post'])
-    def bulk_tag(self, request):
+    def bulk_tag(self, request: Request) -> Response:
         """
         Массовое присвоение тегов объекту.
 
@@ -309,7 +307,7 @@ class TaggedItemViewSet(LoggingMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     @cache_response(timeout=300)
-    def object_tags(self, request):
+    def object_tags(self, request: Request) -> Response:
         """
         Получение всех тегов объекта.
 
@@ -357,7 +355,7 @@ class TaggedItemViewSet(LoggingMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=False, methods=['post'])
-    def remove_tag(self, request):
+    def remove_tag(self, request: Request) -> Response:
         """
         Удаление тега у объекта.
 
