@@ -17,7 +17,7 @@ class UserSession(models.Model):
 
     session_key = models.CharField(
         _('Ключ сессии/токена'),
-        max_length=100,
+        max_length=500,
         unique=True
     )
 
