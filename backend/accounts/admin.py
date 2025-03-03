@@ -24,7 +24,8 @@ class RoleAssignmentInline(admin.TabularInline):
     model = RoleAssignment
     extra = 1
     verbose_name_plural = _('Роли')
-    autocomplete_fields = ['role', 'assigned_by']
+    autocomplete_fields = ['role']
+    fk_name = 'user'  # Указываем внешний ключ для разрешения неоднозначности
 
 
 @admin.register(User)

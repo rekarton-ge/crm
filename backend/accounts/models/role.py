@@ -48,7 +48,8 @@ class Role(models.Model):
         settings.AUTH_USER_MODEL,
         through='RoleAssignment',
         related_name='roles',
-        verbose_name=_('Пользователи')
+        verbose_name=_('Пользователи'),
+        through_fields=('role', 'user')  # Явно указываем поля для связи
     )
 
     class Meta:
