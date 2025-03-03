@@ -35,7 +35,7 @@ class Category(BaseModel):
     """
     name = models.CharField(_("Название"), max_length=100)
     slug = models.SlugField(_("Slug"), max_length=100, unique=True)
-    description = models.TextField(_("Описание"), blank=True)
+    description = models.TextField(_("Описание"), blank=True, null=True)
     parent = models.ForeignKey(
         "self",
         verbose_name=_("Родительская категория"),

@@ -12,6 +12,8 @@ from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 from django.db.models import Q, Count
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
+from django.core.cache import cache
 
 from core.models import Tag, TaggedItem, Category
 
@@ -99,13 +101,21 @@ class TagManager:
             
         Returns:
             Tag: Созданный тег
+            
+        Raises:
+            ValidationError: Если указанный slug уже существует
         """
+        is_slug_provided = slug is not None
+        
         if not slug:
             slug = slugify(name)
         
         # Проверяем, существует ли тег с таким slug
         if Tag.objects.filter(slug=slug).exists():
-            # Добавляем числовой суффикс к slug
+            # Если slug был явно указан, генерируем ошибку
+            if is_slug_provided:
+                raise ValidationError(f"Тег с slug '{slug}' уже существует")
+            # Иначе добавляем числовой суффикс к slug
             i = 1
             while Tag.objects.filter(slug=f"{slug}-{i}").exists():
                 i += 1
@@ -120,7 +130,10 @@ class TagManager:
             created_by=self.user,
         )
         
-        logger.info(f"Tag created: {tag.name} (by {self.user.username if self.user else 'anonymous'})")
+        # Сохраняем тег в кеш
+        cache.set(f'tag:{tag.id}', tag, 3600)  # Кешируем на 1 час
+        
+        logger.info(f"Тег {tag.name} (id: {tag.id}) создан")
         
         return tag
     
@@ -166,7 +179,10 @@ class TagManager:
         
         tag.save()
         
-        logger.info(f"Tag updated: {tag.name} (by {self.user.username if self.user else 'anonymous'})")
+        # Обновляем тег в кеше
+        cache.set(f'tag:{tag.id}', tag, 3600)  # Кешируем на 1 час
+        
+        logger.info(f"Тег {tag.name} (id: {tag.id}) обновлен")
         
         return tag
     
@@ -177,10 +193,16 @@ class TagManager:
         Args:
             tag: Тег для удаления
         """
+        tag_id = tag.id
         tag_name = tag.name
-        tag.delete()
         
-        logger.info(f"Tag deleted: {tag_name} (by {self.user.username if self.user else 'anonymous'})")
+        # Используем hard_delete для фактического удаления из базы данных
+        tag.hard_delete()
+        
+        # Удаляем тег из кеша
+        cache.delete(f'tag:{tag_id}')
+        
+        logger.info(f"Тег {tag_name} (id: {tag_id}) удален")
     
     def get_tags(self, filter_params: Optional[TagFilter] = None) -> List[Tag]:
         """
@@ -425,6 +447,9 @@ class TagService:
             
         Returns:
             Tag: Созданный тег
+            
+        Raises:
+            ValidationError: Если указанный slug уже существует
         """
         return self.tag_manager.create_tag(name, color, description, category, slug)
     
@@ -637,6 +662,9 @@ class TagService:
             
         Returns:
             Category: Обновленная категория
+            
+        Raises:
+            ValueError: Если попытка создать циклическую связь
         """
         if name is not None:
             category.name = name
@@ -646,8 +674,16 @@ class TagService:
         
         if parent is not None:
             # Проверяем, не является ли родительская категория потомком текущей
-            if parent.pk == category.pk or (parent.parent and parent.parent.pk == category.pk):
-                raise ValueError("Cannot set a category as its own parent or child")
+            if parent.pk == category.pk:
+                raise ValueError("Нельзя установить категорию в качестве своего родителя")
+            
+            # Проверяем на циклическую ссылку на произвольной глубине
+            if parent:
+                current_parent = parent
+                while current_parent:
+                    if current_parent.pk == category.pk:
+                        raise ValueError("Нельзя создавать циклические связи между категориями")
+                    current_parent = current_parent.parent
             
             category.parent = parent
         
@@ -664,7 +700,7 @@ class TagService:
         
         category.save()
         
-        logger.info(f"Category updated: {category.name} (by {self.user.username if self.user else 'anonymous'})")
+        logger.info(f"Категория {category.name} (id: {category.id}) обновлена")
         
         return category
     

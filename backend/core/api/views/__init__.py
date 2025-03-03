@@ -7,6 +7,7 @@
 
 from core.api.views.settings import SettingViewSet
 from core.api.views.tags import TagViewSet, TaggedItemViewSet
+from core.api.views.files import FileUploadViewSet
 
 __all__ = [
     # Представления для настроек
@@ -15,4 +16,7 @@ __all__ = [
     # Представления для тегов
     'TagViewSet',
     'TaggedItemViewSet',
+
+    # Представления для файлов
+    'FileUploadViewSet'
 ]

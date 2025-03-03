@@ -134,6 +134,10 @@ def handle_tag_created(sender: Type[Model], instance: Model, created: bool, **kw
     if created:
         logger.info(f"Тег {instance.name} создан")
         
+        # Сохраняем тег в кеш
+        from django.core.cache import cache
+        cache.set(f'tag:{instance.id}', instance, 3600)  # Кешируем на 1 час
+        
         # Получаем ContentType для модели Tag
         content_type = ContentType.objects.get_for_model(sender)
         
@@ -157,6 +161,10 @@ def handle_tag_updated(sender: Type[Model], instance: Model, created: bool, **kw
     if not created:
         logger.info(f"Тег {instance.name} обновлен")
         
+        # Обновляем тег в кеше
+        from django.core.cache import cache
+        cache.set(f'tag:{instance.id}', instance, 3600)  # Кешируем на 1 час
+        
         # Логируем действие
         AuditLog.objects.create(
             action='tag_updated',
@@ -175,6 +183,10 @@ def handle_tag_deleted(sender: Type[Model], instance: Model, **kwargs: Any) -> N
     Вызывается при удалении тега.
     """
     logger.info(f"Тег {instance.name} удален")
+    
+    # Удаляем тег из кеша
+    from django.core.cache import cache
+    cache.delete(f'tag:{instance.id}')
     
     # Логируем действие
     AuditLog.objects.create(

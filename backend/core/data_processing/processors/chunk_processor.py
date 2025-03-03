@@ -435,21 +435,25 @@ class BulkChunkProcessor(ChunkProcessor[T, R]):
 
         return bulk_result
 
-    def bulk_update(self, queryset: QuerySet, update_func: Callable[[Model], None]) -> ProcessingResult:
+    def bulk_update(self, queryset: QuerySet, update_func: Callable[[Model], None], update_fields: Optional[List[str]] = None) -> ProcessingResult:
         """
         Массово обновляет объекты модели с использованием функции обновления.
 
         Args:
             queryset: QuerySet с объектами для обновления.
             update_func: Функция для обновления каждого объекта.
+            update_fields: Список полей для обновления (переопределяет self.update_fields).
 
         Returns:
             ProcessingResult: Результат массового обновления.
         """
         result = ProcessingResult()
 
+        # Используем переданные поля или поля из конструктора
+        fields_to_update = update_fields or self.update_fields
+        
         # Проверяем, что указаны поля для обновления
-        if not self.update_fields:
+        if not fields_to_update:
             error = ProcessingError(
                 message="Не указаны поля для обновления (update_fields)",
                 category=ErrorCategory.VALIDATION,
@@ -478,7 +482,7 @@ class BulkChunkProcessor(ChunkProcessor[T, R]):
             model_class = queryset.model
 
             for chunk in chunks:
-                model_class.objects.bulk_update(chunk, self.update_fields)
+                model_class.objects.bulk_update(chunk, fields_to_update)
                 bulk_result.success_count += len(chunk)
                 bulk_result.updated_objects.extend(chunk)
 
