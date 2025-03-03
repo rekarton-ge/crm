@@ -9,7 +9,7 @@
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar, Union, Type
 
 from django.db import transaction
 from django.db.models import Model, QuerySet

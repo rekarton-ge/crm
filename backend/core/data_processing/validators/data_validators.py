@@ -8,7 +8,7 @@
 import re
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Pattern, Set, Tuple, Union, Callable
+from typing import Any, Dict, List, Optional, Pattern, Set, Tuple, Union, Callable, Type
 
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError

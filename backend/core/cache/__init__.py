@@ -1,50 +1,91 @@
 """
-Пакет для работы с кэшированием.
+Модуль кэширования.
 
-Этот пакет содержит утилиты и декораторы для эффективного кэширования данных
-и ответов API, с целью повышения производительности и снижения нагрузки на базу данных.
+Этот модуль содержит функции и классы для работы с кэшем.
 """
 
 from core.cache.cache_utils import (
-    generate_cache_key,
-    cache_get_or_set,
-    invalidate_cache_keys,
-    invalidate_cache_prefix,
-    get_model_cache_key,
-    invalidate_model_cache,
-    get_queryset_cache_key,
+    get_cache_key,
+    cache_result,
+    invalidate_cache,
+    invalidate_cache_pattern,
     cache_queryset,
-    is_cache_enabled,
-    CacheManager
+    cache_model_instance,
+    cache_function,
+    CacheManager,
 )
 
 from core.cache.decorators import (
-    cache_result,
+    cache_result as cache_result_decorator,
     cache_method_result,
     cache_property,
     cache_response,
     invalidate_cache_on_save,
-    disable_cache_for_user
+    disable_cache_for_user,
+    override_cache_settings,
 )
 
-__all__ = [
-    # Утилиты кэширования
-    'generate_cache_key',
-    'cache_get_or_set',
-    'invalidate_cache_keys',
-    'invalidate_cache_prefix',
-    'get_model_cache_key',
-    'invalidate_model_cache',
-    'get_queryset_cache_key',
-    'cache_queryset',
-    'is_cache_enabled',
-    'CacheManager',
+from core.cache.middleware import (
+    CacheMiddleware,
+    CacheControlMiddleware,
+    ConditionalGetMiddleware,
+)
 
-    # Декораторы кэширования
+from core.cache.settings import (
+    get_cache_settings,
+    get_cache_middleware_settings,
+    get_cache_control_settings,
+    is_cache_enabled,
+    get_cache_timeout,
+    get_cache_key_prefix,
+    get_cache_version,
+)
+
+from core.cache.backends import (
+    PrefixedCache,
+    PatternRedisCache,
+    PatternLocMemCache,
+    TieredCache,
+)
+
+
+__all__ = [
+    # cache_utils.py
+    'get_cache_key',
     'cache_result',
+    'invalidate_cache',
+    'invalidate_cache_pattern',
+    'cache_queryset',
+    'cache_model_instance',
+    'cache_function',
+    'CacheManager',
+    
+    # decorators.py
+    'cache_result_decorator',
     'cache_method_result',
     'cache_property',
     'cache_response',
     'invalidate_cache_on_save',
-    'disable_cache_for_user'
+    'disable_cache_for_user',
+    'override_cache_settings',
+    
+    # middleware.py
+    'CacheMiddleware',
+    'CacheControlMiddleware',
+    'ConditionalGetMiddleware',
+    
+    # settings.py
+    'get_cache_settings',
+    'get_cache_middleware_settings',
+    'get_cache_control_settings',
+    'is_cache_enabled',
+    'get_cache_timeout',
+    'get_cache_key_prefix',
+    'get_cache_version',
+    
+    # backends.py
+    'PrefixedCache',
+    'PatternRedisCache',
+    'PatternLocMemCache',
+    'TieredCache',
 ]

@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     'django_celery_results',
 
     # Приложения вашего проекта будут добавлены здесь
-    # 'core.apps.CoreConfig',
+    'core.apps.CoreConfig',
     # 'accounts.apps.AccountsConfig',
     # 'clients.apps.ClientsConfig',
     # и т.д.

@@ -13,7 +13,7 @@ from core.api.serializers.base import (
     ContentTypeField,
     DynamicFieldsModelSerializer
 )
-from core.models.tags import Tag, GenericTaggedItem
+from core.models.tags import Tag, TaggedItem as GenericTaggedItem
 
 
 class TagSerializer(BaseModelSerializer):
@@ -28,7 +28,7 @@ class TagSerializer(BaseModelSerializer):
         Метаданные сериализатора тегов.
         """
         model = Tag
-        fields = ['id', 'name', 'slug', 'description', 'color', 'is_active', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'slug', 'description', 'color', 'created_at', 'updated_at']
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
 
 
@@ -44,7 +44,7 @@ class TagCreateSerializer(BaseModelSerializer):
         Метаданные сериализатора создания тегов.
         """
         model = Tag
-        fields = ['name', 'description', 'color', 'is_active']
+        fields = ['name', 'description', 'color']
 
     def validate_name(self, value):
         """
@@ -76,7 +76,7 @@ class TagUpdateSerializer(BaseModelSerializer):
         Метаданные сериализатора обновления тегов.
         """
         model = Tag
-        fields = ['name', 'description', 'color', 'is_active']
+        fields = ['name', 'description', 'color']
 
     def validate_name(self, value):
         """

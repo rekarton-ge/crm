@@ -8,7 +8,8 @@
 from rest_framework import serializers
 
 from core.api.serializers.base import BaseModelSerializer, DynamicFieldsModelSerializer
-from core.models.settings import Setting
+from core.models.settings import SystemSetting, UserSetting
+from core.models.metadata import Setting
 
 
 class SettingSerializer(BaseModelSerializer):
@@ -24,7 +25,7 @@ class SettingSerializer(BaseModelSerializer):
         Метаданные сериализатора настроек.
         """
         model = Setting
-        fields = ['id', 'key', 'value', 'description', 'category', 'is_active', 'created_at', 'updated_at']
+        fields = ['id', 'key', 'value', 'description', 'is_public', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
@@ -41,7 +42,7 @@ class SettingCreateSerializer(BaseModelSerializer):
         Метаданные сериализатора создания настроек.
         """
         model = Setting
-        fields = ['key', 'value', 'description', 'category', 'is_active']
+        fields = ['key', 'value', 'description', 'is_public']
 
     def validate_key(self, value):
         """
@@ -74,7 +75,7 @@ class SettingUpdateSerializer(BaseModelSerializer):
         Метаданные сериализатора обновления настроек.
         """
         model = Setting
-        fields = ['value', 'description', 'category', 'is_active']
+        fields = ['value', 'description', 'is_public']
 
 
 class SettingBulkUpdateSerializer(serializers.Serializer):
@@ -155,10 +156,8 @@ class SettingBulkUpdateSerializer(serializers.Serializer):
                 setting.value = setting_data['value']
             if 'description' in setting_data:
                 setting.description = setting_data['description']
-            if 'category' in setting_data:
-                setting.category = setting_data['category']
-            if 'is_active' in setting_data:
-                setting.is_active = setting_data['is_active']
+            if 'is_public' in setting_data:
+                setting.is_public = setting_data['is_public']
 
             setting.save()
             updated_settings.append(setting)

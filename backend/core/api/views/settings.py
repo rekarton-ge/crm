@@ -16,7 +16,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
-from core.models.settings import Setting
+from core.models.metadata import Setting
+from core.models.settings import SystemSetting, UserSetting
 from core.api.serializers.settings import (
     SettingSerializer,
     SettingCreateSerializer,
@@ -27,10 +28,9 @@ from core.api.serializers.settings import (
 )
 from core.api.permissions import ReadOnlyOrAdmin
 from core.cache.decorators import cache_response
-from core.mixins.view_mixins import LoggingMixin
 
 
-class SettingViewSet(LoggingMixin, viewsets.ModelViewSet):
+class SettingViewSet(viewsets.ModelViewSet):
     """
     API для работы с настройками системы.
 
@@ -42,10 +42,19 @@ class SettingViewSet(LoggingMixin, viewsets.ModelViewSet):
     serializer_class = SettingSerializer
     permission_classes = [ReadOnlyOrAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'is_active']
-    search_fields = ['key', 'description', 'category']
-    ordering_fields = ['key', 'category', 'created_at', 'updated_at']
-    ordering = ['category', 'key']
+    filterset_fields = ['is_public']
+    search_fields = ['key', 'description']
+    ordering_fields = ['key', 'created_at', 'updated_at']
+    ordering = ['key']
+
+    def get_queryset(self):
+        """
+        Возвращает queryset с фильтрацией по удаленным объектам.
+        
+        Returns:
+            QuerySet: Отфильтрованный queryset
+        """
+        return Setting.objects.filter(is_deleted=False)
 
     def get_serializer_class(self):
         """
@@ -63,7 +72,7 @@ class SettingViewSet(LoggingMixin, viewsets.ModelViewSet):
 
         return SettingSerializer
 
-    @cache_response(timeout=300, key_func='get_settings_cache_key')
+    @cache_response(timeout=300)
     def list(self, request, *args, **kwargs):
         """
         Получение списка настроек с кэшированием результата.
@@ -78,7 +87,7 @@ class SettingViewSet(LoggingMixin, viewsets.ModelViewSet):
         """
         return super().list(request, *args, **kwargs)
 
-    @cache_response(timeout=300, key_func='get_setting_detail_cache_key')
+    @cache_response(timeout=300)
     def retrieve(self, request, *args, **kwargs):
         """
         Получение конкретной настройки с кэшированием результата.

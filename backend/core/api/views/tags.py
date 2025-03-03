@@ -20,7 +20,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from django_filters.rest_framework import DjangoFilterBackend
 
-from core.models.tags import Tag, GenericTaggedItem
+from core.models.tags import Tag, TaggedItem as GenericTaggedItem
 from core.api.serializers.tags import (
     TagSerializer,
     TagCreateSerializer,
@@ -34,11 +34,9 @@ from core.api.serializers.tags import (
 )
 from core.api.permissions import ReadOnlyOrAdmin
 from core.cache.decorators import cache_response
-from core.mixins.view_mixins import LoggingMixin
-from core.services.tag_service import TagService
 
 
-class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
+class TagViewSet(viewsets.ModelViewSet):
     """
     API для работы с тегами.
 
@@ -50,7 +48,7 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
     serializer_class = TagSerializer
     permission_classes = [ReadOnlyOrAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['is_active']
+    filterset_fields = []
     search_fields = ['name', 'slug', 'description']
     ordering_fields = ['name', 'slug', 'created_at', 'updated_at']
     ordering = ['name']
@@ -61,11 +59,11 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
         Возвращает базовый queryset для тегов.
 
         В зависимости от действия может быть модифицирован.
-
+        
         Returns:
             QuerySet: QuerySet для тегов
         """
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(is_deleted=False)
 
         # Для действия 'popular' добавляем аннотацию с количеством объектов
         if self.action == 'popular':
@@ -244,7 +242,7 @@ class TagViewSet(LoggingMixin, viewsets.ModelViewSet):
             return f'tag_{method_name}_{query_string}'
 
 
-class TaggedItemViewSet(LoggingMixin, viewsets.ModelViewSet):
+class TaggedItemViewSet(viewsets.ModelViewSet):
     """
     API для работы с связями объектов с тегами.
 

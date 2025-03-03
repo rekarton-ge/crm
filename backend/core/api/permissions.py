@@ -86,9 +86,10 @@ class IsOwner(permissions.BasePermission):
 class ReadOnlyOrAdmin(permissions.BasePermission):
     """
     Разрешение, которое предоставляет полный доступ администраторам и доступ только
-    для чтения остальным пользователям.
+    для чтения остальным аутентифицированным пользователям.
+    Неаутентифицированные пользователи не имеют доступа.
     """
-    message = 'Требуются права администратора для изменения данных.'
+    message = 'Требуются права администратора для изменения данных или аутентификация для чтения.'
 
     def has_permission(self, request, view):
         """
@@ -99,12 +100,19 @@ class ReadOnlyOrAdmin(permissions.BasePermission):
             view: Представление API.
 
         Возвращает:
-            True, если метод запроса безопасный или пользователь администратор, иначе False.
+            True, если пользователь аутентифицирован и метод запроса безопасный,
+            или пользователь администратор, иначе False.
         """
+        # Проверяем, аутентифицирован ли пользователь
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        # Для безопасных методов разрешаем доступ аутентифицированным пользователям
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        return request.user and request.user.is_staff
+        # Для небезопасных методов требуем права администратора
+        return request.user.is_staff
 
 
 class ActionBasedPermission(permissions.BasePermission):
